@@ -2,18 +2,10 @@ import * as Phaser from 'phaser';
 
 class UserInputScene extends Phaser.Scene {
   private gameContainer!: HTMLElement;
-
-  private avatarOptions: string[] = ['avatar1.png', 'avatar2.png']; // Add your avatar filenames here
+  private submitButton: HTMLButtonElement | null = null;
 
   constructor() {
     super({ key: 'UserInputScene' });
-  }
-
-  preload(): void {
-    // Preload any necessary assets (e.g., avatar images)
-    this.avatarOptions.forEach((avatar) => {
-      this.load.image(avatar, `assets/avatars/${avatar}`);
-    });
   }
 
   create(): void {
@@ -32,15 +24,18 @@ class UserInputScene extends Phaser.Scene {
     usernameInput.type = 'text';
     usernameInput.placeholder = 'Enter your username';
     usernameInput.required = true;
+    usernameInput.id = 'username-input';
 
     // Create a container for avatar options
     const avatarContainer = document.createElement('div');
     avatarContainer.id = 'avatar-container';
 
     // Create and add avatar images with click events
-    this.avatarOptions.forEach((avatar) => {
+    const avatarOptions = ['avatar1', 'avatar2']; // Add your avatar filenames here
+
+    avatarOptions.forEach((avatar) => {
       const avatarImage = document.createElement('img');
-      avatarImage.src = `assets/avatars/${avatar}`;
+      avatarImage.src = `assets/avatars/${avatar}.png`;
       avatarImage.alt = avatar;
       avatarImage.className = 'avatar-option';
 
@@ -57,29 +52,45 @@ class UserInputScene extends Phaser.Scene {
 
         // Add the 'selected-avatar' class to the clicked avatar
         avatarImage.classList.add('selected-avatar');
-
-        // Implement logic to handle avatar selection (e.g., store the selected avatar)
-        console.log(`Selected avatar: ${avatar}`);
       });
 
       avatarContainer.appendChild(avatarImage);
     });
 
     // Create a submit button
-    const submitButton = document.createElement('button');
-    submitButton.type = 'submit';
-    submitButton.textContent = 'Submit';
+    this.submitButton = document.createElement('button');
+    this.submitButton.type = 'button'; // Use 'button' type to prevent form submission
+    this.submitButton.textContent = 'Submit';
+
+    // Add a click event to handle user submission
+    this.submitButton.addEventListener('click', () => {
+      const usernameInput = document.getElementById('username-input') as HTMLInputElement;
+      const selectedAvatar = document.querySelector('.selected-avatar') as HTMLImageElement;
+
+      // Check if both username and avatar are selected
+      if (usernameInput.value && selectedAvatar) {
+        // Get the selected avatar filename (e.g., 'avatar1.png')
+        const avatar = selectedAvatar.alt;
+
+        // Send the selected username and avatar back to the LobbyScene
+        this.scene.get('LobbyScene').events.emit('userInputComplete', {
+          username: usernameInput.value,
+          avatar,
+        });
+      } else {
+        // Handle the case where username or avatar is not selected
+        console.log('Please select a username and avatar.');
+      }
+    });
 
     // Append form elements to the form
     form.appendChild(usernameInput);
     form.appendChild(avatarContainer);
-    form.appendChild(submitButton);
+    form.appendChild(this.submitButton);
 
     // Append the form to the game container
     this.gameContainer.appendChild(form);
   }
-
-  // Other methods for handling form submission and scene transitions
 }
 
 export default UserInputScene;

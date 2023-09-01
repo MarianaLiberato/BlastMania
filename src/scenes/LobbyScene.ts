@@ -1,13 +1,14 @@
+// src/scenes/LobbyScene.ts
+
 import * as Phaser from 'phaser';
-import backend from '../backend'; // Update the path to your backend file
-import { MAX_PLAYERS, COUNTDOWN_SECONDS } from '../lobby-constants'; // Update the path to your constants file
+import backend from '../backend';
 import Button from '../components/Button';
 
 export default class LobbyScene extends Phaser.Scene {
   private countdownTimer: Phaser.Time.TimerEvent | null = null;
   private timerText: Phaser.GameObjects.Text | null = null;
-  private countdownTime: number = COUNTDOWN_SECONDS;
-  private playerData: { username: string; avatar: string }[] = []; // Store player data
+  private countdownTime: number = 30;
+  private playerData: { username: string; avatar: string }[] = [];
 
   constructor() {
     super({ key: 'LobbyScene' });
@@ -24,10 +25,9 @@ export default class LobbyScene extends Phaser.Scene {
     });
   }
 
-
-  create(): void {
+  async create(): Promise<void> {
     // Create UI elements, including placeholders for player avatars and usernames.
-    this.createPlayerUI();
+    this.createPlayerUI(this.playerData);
 
     // Add a countdown timer text element starting at 30 seconds.
     this.timerText = this.add.text(400, 50, 'Time: 30', {
@@ -42,6 +42,22 @@ export default class LobbyScene extends Phaser.Scene {
       callback: this.updateTimer,
       callbackScope: this,
       loop: true,
+    });
+
+    // Add a "Join" button
+    const joinButton = new Button(this, 400, 500, 'Join', () => {
+      // Open the UserInputScene when the "Join" button is clicked.
+      this.scene.launch('UserInputScene');
+      this.scene.bringToTop('UserInputScene');
+    });
+
+    // Listen for 'userInputComplete' event from UserInputScene
+    this.events.on('userInputComplete', (userData: { username: string; avatar: string }) => {
+      // Add the new player to the lobby
+      this.addPlayer(userData.username, userData.avatar);
+
+      // You can also close the UserInputScene at this point if needed
+      this.scene.stop('UserInputScene');
     });
   }
 
@@ -61,10 +77,9 @@ export default class LobbyScene extends Phaser.Scene {
     }
   }
 
-  private createPlayerUI(): void {
-    console.log(this.playerData)
+  private createPlayerUI(playerData: { username: string; avatar: string }[]): void {
     // Create UI elements for each player using playerData.
-    this.playerData.forEach((player, index) => {
+    playerData.forEach((player, index) => {
       const x = 100; // Adjust X position based on your layout.
       const y = 100 + index * 80; // Adjust Y position based on your layout.
 
@@ -84,21 +99,17 @@ export default class LobbyScene extends Phaser.Scene {
         color: '#fff',
       });
     });
-
-    // Add a "Join" button
-    const joinButton = new Button(this, 400, 500, 'Join', () => {
-      // Open the UserInputScene when the "Join" button is clicked.
-      this.scene.launch('UserInputScene');
-      this.scene.bringToTop('UserInputScene');
-    });
   }
 
   // Method to add a new player to the lobby
   addPlayer(username: string, avatar: string): void {
     // Update the player data with the new player
     this.playerData.push({ username, avatar });
+   
+    
+    // TODO: add player to the server
 
     // Re-create the player UI with the updated player data
-    this.createPlayerUI();
+    this.createPlayerUI(this.playerData);
   }
 }
