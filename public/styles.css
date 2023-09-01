@@ -1,0 +1,4 @@
+/* Highlighted avatar style */
+.selected-avatar {
+    border: 2px solid #FFD700; /* Add your preferred border style */
+}
